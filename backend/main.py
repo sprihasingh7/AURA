@@ -11,7 +11,7 @@ from tasks import get_tasks
 from report_checker import check_report
 
 app = FastAPI(title="AURA API")
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 class ChatRequest(BaseModel):
     message: str

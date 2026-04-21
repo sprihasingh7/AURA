@@ -1,7 +1,7 @@
 ﻿import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
-const API = "http://localhost:8000";
+const API = "https://aura-adtj.onrender.com";
 
 const css = `
   * { box-sizing: border-box; margin: 0; padding: 0; }
