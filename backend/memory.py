@@ -1,29 +1,33 @@
-﻿import os, uuid
+import os, uuid
 from dotenv import load_dotenv
 from chromadb import PersistentClient
-from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 load_dotenv()
 
 VECTOR_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "vectors2")
 os.makedirs(VECTOR_DIR, exist_ok=True)
 
-ef = SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
-client = PersistentClient(path=VECTOR_DIR)
-collection = client.get_or_create_collection("aura_memory", embedding_function=ef)
+_ef = None
+_client = None
+_collection = None
+
+def get_collection():
+    global _ef, _client, _collection
+    if _collection is None:
+        from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+        _ef = SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
+        _client = PersistentClient(path=VECTOR_DIR)
+        _collection = _client.get_or_create_collection("aura_memory", embedding_function=_ef)
+    return _collection
 
 def store_memory(text, metadata):
-    collection.add(
-        documents=[text],
-        metadatas=[metadata],
-        ids=[str(uuid.uuid4())]
-    )
-    print(f"[MEMORY] Stored: {metadata.get('source')} | total: {collection.count()}")
+    col = get_collection()
+    col.add(documents=[text], metadatas=[metadata], ids=[str(uuid.uuid4())])
 
 def search_memory(query, k=5):
-    count = collection.count()
-    if count == 0:
+    col = get_collection()
+    if col.count() == 0:
         return []
-    results = collection.query(query_texts=[query], n_results=min(k, count))
+    results = col.query(query_texts=[query], n_results=min(k, col.count()))
     docs = []
     for i, doc in enumerate(results["documents"][0]):
         meta = results["metadatas"][0][i]
@@ -31,7 +35,8 @@ def search_memory(query, k=5):
     return docs
 
 def get_all_sources():
-    data = collection.get()
+    col = get_collection()
+    data = col.get()
     sources = set()
     for meta in data["metadatas"]:
         if meta and "source" in meta:
